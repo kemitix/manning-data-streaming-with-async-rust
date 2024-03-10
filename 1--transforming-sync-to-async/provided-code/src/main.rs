@@ -151,6 +151,44 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
+struct PriceDifference;
+impl AsyncStockSignal for PriceDifference {
+    type SignalType = (f64, f64);
+
+    fn calculate(&self, series: &[f64]) -> Option<Self::SignalType> {
+        price_diff(series)
+    }
+}
+
+struct MinPrice;
+impl AsyncStockSignal for MinPrice {
+    type SignalType = f64;
+
+    fn calculate(&self, series: &[f64]) -> Option<Self::SignalType> {
+        min(series)
+    }
+}
+
+struct MaxPrice;
+impl AsyncStockSignal for MaxPrice {
+    type SignalType = f64;
+
+    fn calculate(&self, series: &[f64]) -> Option<Self::SignalType> {
+        max(series)
+    }
+}
+
+struct WindowedSMA {
+    window_size: usize,
+}
+impl AsyncStockSignal for WindowedSMA {
+    type SignalType = Vec<f64>;
+
+    fn calculate(&self, series: &[f64]) -> Option<Self::SignalType> {
+        n_window_sma(self.window_size, series)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(non_snake_case)]
