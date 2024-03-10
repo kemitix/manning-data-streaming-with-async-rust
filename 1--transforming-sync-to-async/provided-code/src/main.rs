@@ -20,7 +20,6 @@ struct Opts {
 /// A trait to provide a common interface for all signal calculations.
 ///
 trait AsyncStockSignal {
-
     ///
     /// The signal's data type.
     ///
@@ -97,7 +96,7 @@ fn min(series: &[f64]) -> Option<f64> {
 ///
 /// Retrieve data from a data source and extract the closing prices. Errors during download are mapped onto io::Errors as InvalidData.
 ///
-fn fetch_closing_data(
+async fn fetch_closing_data(
     symbol: &str,
     beginning: &DateTime<Utc>,
     end: &DateTime<Utc>,
@@ -106,6 +105,7 @@ fn fetch_closing_data(
 
     let response = provider
         .get_quote_history(symbol, *beginning, *end)
+        .await
         .map_err(|_| Error::from(ErrorKind::InvalidData))?;
     let mut quotes = response
         .quotes()
@@ -127,14 +127,14 @@ async fn main() -> std::io::Result<()> {
     // a simple way to output a CSV header
     println!("period start,symbol,price,change %,min,max,30d avg");
     for symbol in opts.symbols.split(',') {
-        let closes = fetch_closing_data(&symbol, &from, &to)?;
+        let closes = fetch_closing_data(&symbol, &from, &to).await?;
         if !closes.is_empty() {
-                // min/max of the period. unwrap() because those are Option types
-                let period_max: f64 = max(&closes).unwrap();
-                let period_min: f64 = min(&closes).unwrap();
-                let last_price = *closes.last().unwrap_or(&0.0);
-                let (_, pct_change) = price_diff(&closes).unwrap_or((0.0, 0.0));
-                let sma = n_window_sma(30, &closes).unwrap_or_default();
+            // min/max of the period. unwrap() because those are Option types
+            let period_max: f64 = max(&closes).unwrap();
+            let period_min: f64 = min(&closes).unwrap();
+            let last_price = *closes.last().unwrap_or(&0.0);
+            let (_, pct_change) = price_diff(&closes).unwrap_or((0.0, 0.0));
+            let sma = n_window_sma(30, &closes).unwrap_or_default();
 
             // a simple way to output CSV data
             println!(
