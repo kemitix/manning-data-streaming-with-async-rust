@@ -138,6 +138,18 @@ fn output_csv_line(closes: Vec<f64>, from: DateTime<Utc>, symbol: &str) {
     );
 }
 
+async fn fetch_and_output_closing_data(
+    symbol: &str,
+    from: DateTime<Utc>,
+    to: DateTime<Utc>,
+) -> std::io::Result<()> {
+    let closes = fetch_closing_data(&symbol, &from, &to).await?;
+    if !closes.is_empty() {
+        output_csv_line(closes, from, symbol);
+    }
+    Ok(())
+}
+
 #[async_std::main]
 async fn main() -> std::io::Result<()> {
     let opts = Opts::parse();
@@ -147,10 +159,7 @@ async fn main() -> std::io::Result<()> {
     // a simple way to output a CSV header
     println!("period start,symbol,price,change %,min,max,30d avg");
     for symbol in opts.symbols.split(',') {
-        let closes = fetch_closing_data(&symbol, &from, &to).await?;
-        if !closes.is_empty() {
-            output_csv_line(closes, from, symbol);
-        }
+        fetch_and_output_closing_data(symbol, from, to).await?;
     }
     Ok(())
 }
