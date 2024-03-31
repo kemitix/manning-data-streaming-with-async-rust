@@ -118,6 +118,26 @@ async fn fetch_closing_data(
     }
 }
 
+fn output_csv_line(closes: Vec<f64>, from: DateTime<Utc>, symbol: &str) {
+    let period_max: f64 = max(&closes).unwrap();
+    let period_min: f64 = min(&closes).unwrap();
+    let last_price = *closes.last().unwrap_or(&0.0);
+    let (_, pct_change) = price_diff(&closes).unwrap_or((0.0, 0.0));
+    let sma = n_window_sma(30, &closes).unwrap_or_default();
+
+    // a simple way to output CSV data
+    println!(
+        "{},{},${:.2},{:.2}%,${:.2},${:.2},${:.2}",
+        from.to_rfc3339(),
+        symbol,
+        last_price,
+        pct_change * 100.0,
+        period_min,
+        period_max,
+        sma.last().unwrap_or(&0.0)
+    );
+}
+
 #[async_std::main]
 async fn main() -> std::io::Result<()> {
     let opts = Opts::parse();
@@ -129,24 +149,7 @@ async fn main() -> std::io::Result<()> {
     for symbol in opts.symbols.split(',') {
         let closes = fetch_closing_data(&symbol, &from, &to).await?;
         if !closes.is_empty() {
-            // min/max of the period. unwrap() because those are Option types
-            let period_max: f64 = max(&closes).unwrap();
-            let period_min: f64 = min(&closes).unwrap();
-            let last_price = *closes.last().unwrap_or(&0.0);
-            let (_, pct_change) = price_diff(&closes).unwrap_or((0.0, 0.0));
-            let sma = n_window_sma(30, &closes).unwrap_or_default();
-
-            // a simple way to output CSV data
-            println!(
-                "{},{},${:.2},{:.2}%,${:.2},${:.2},${:.2}",
-                from.to_rfc3339(),
-                symbol,
-                last_price,
-                pct_change * 100.0,
-                period_min,
-                period_max,
-                sma.last().unwrap_or(&0.0)
-            );
+            output_csv_line(closes, from, symbol);
         }
     }
     Ok(())
