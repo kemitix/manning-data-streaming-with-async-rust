@@ -178,6 +178,10 @@ async fn main() -> std::io::Result<()> {
 
     // a simple way to output a CSV header
     println!("period start,symbol,price,change %,min,max,30d avg");
+
+    // initial data fetch
+    fetch_and_output_symbol_data(&opts.symbols, from, to).await?;
+
     let mut interval = async_std::stream::interval(Duration::from_secs(30));
     while let Some(_) = interval.next().await {
         fetch_and_output_symbol_data(&opts.symbols, from, to).await?;
