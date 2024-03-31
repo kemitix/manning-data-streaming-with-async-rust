@@ -2,6 +2,7 @@ use async_std::prelude::*;
 use chrono::prelude::*;
 
 use clap::Parser;
+use futures::future::try_join_all;
 use std::{
     io::{Error, ErrorKind},
     time::Duration,
@@ -160,9 +161,12 @@ async fn fetch_and_output_symbol_data(
     from: DateTime<Utc>,
     to: DateTime<Utc>,
 ) -> std::io::Result<()> {
+    let mut fs = vec![];
     for symbol in symbols.split(',') {
-        fetch_and_output_closing_data(symbol, from, to).await?;
+        let f = fetch_and_output_closing_data(symbol, from, to);
+        fs.push(f);
     }
+    try_join_all(fs).await?;
     Ok(())
 }
 
