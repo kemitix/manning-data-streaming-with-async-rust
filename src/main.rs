@@ -150,6 +150,17 @@ async fn fetch_and_output_closing_data(
     Ok(())
 }
 
+async fn fetch_and_output_symbol_data(
+    symbols: &str,
+    from: DateTime<Utc>,
+    to: DateTime<Utc>,
+) -> std::io::Result<()> {
+    for symbol in symbols.split(',') {
+        fetch_and_output_closing_data(symbol, from, to).await?;
+    }
+    Ok(())
+}
+
 #[async_std::main]
 async fn main() -> std::io::Result<()> {
     let opts = Opts::parse();
@@ -158,9 +169,7 @@ async fn main() -> std::io::Result<()> {
 
     // a simple way to output a CSV header
     println!("period start,symbol,price,change %,min,max,30d avg");
-    for symbol in opts.symbols.split(',') {
-        fetch_and_output_closing_data(symbol, from, to).await?;
-    }
+    fetch_and_output_symbol_data(&opts.symbols, from, to).await?;
     Ok(())
 }
 
