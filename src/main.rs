@@ -1,6 +1,11 @@
+use async_std::prelude::*;
 use chrono::prelude::*;
+
 use clap::Parser;
-use std::io::{Error, ErrorKind};
+use std::{
+    io::{Error, ErrorKind},
+    time::Duration,
+};
 use yahoo_finance_api as yahoo;
 
 #[derive(Parser, Debug)]
@@ -169,7 +174,10 @@ async fn main() -> std::io::Result<()> {
 
     // a simple way to output a CSV header
     println!("period start,symbol,price,change %,min,max,30d avg");
-    fetch_and_output_symbol_data(&opts.symbols, from, to).await?;
+    let mut interval = async_std::stream::interval(Duration::from_secs(30));
+    while let Some(_) = interval.next().await {
+        fetch_and_output_symbol_data(&opts.symbols, from, to).await?;
+    }
     Ok(())
 }
 
